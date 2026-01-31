@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the election campaign bell ringing website at https://zhnlnz-3000.csb.app. The website should display a full-screen view with sky blue background, show 'BAJAO GHANTI' as main heading, show 'Shake your device or tap the bell' as subtext, display a bell image in center that users can click, play bell sound and animate when clicking, show ring counter that increments, show 'Tap to ring' initially then 'Rang X times' after clicking, and have floating animation when idle. Test page loads correctly, clicking triggers sound and animation, ring counter updates, and mobile responsive design."
+user_problem_statement: "Test the election campaign bell ringing website at https://zhnlnz-3000.csb.app. The website should display a full-screen view with sky blue background, show 'ABKI BAR BALEN SARKAR' as main heading (NOT 'BAJAO GHANTI'), show 'Shake your device or tap the bell' as subtext, display a bell image in center that users can click, play bell sound and animate when clicking, show ring counter that increments, show 'Tap to ring' initially then 'Rang X times' after clicking, and have floating animation when idle. Sound should play ONLY while device is being shaken and STOP when shaking stops, with sound looping while shaking continues. Test page loads correctly, clicking triggers sound and animation, ring counter updates, and mobile responsive design."
 
 frontend:
   - task: "Main page layout and styling"
