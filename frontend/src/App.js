@@ -25,38 +25,14 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [ringCount, setRingCount] = useState(0);
   const [showRipple, setShowRipple] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
   
-  const audioRef = useRef(null);
+  const videoRef = useRef(null);
   const lastShakeTime = useRef(0);
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
   
-  // Initialize audio with fallback
+  // Initialize audio/video element
   useEffect(() => {
-    const initAudio = async () => {
-      audioRef.current = new Audio(BELL_SOUND);
-      audioRef.current.preload = "auto";
-      
-      audioRef.current.addEventListener("canplaythrough", () => {
-        setIsLoading(false);
-      });
-      
-      audioRef.current.addEventListener("error", () => {
-        // Try fallback URL
-        console.log("Primary audio failed, trying fallback...");
-        audioRef.current = new Audio(BELL_SOUND_FALLBACK);
-        audioRef.current.preload = "auto";
-        audioRef.current.addEventListener("canplaythrough", () => {
-          setIsLoading(false);
-        });
-        audioRef.current.addEventListener("error", () => {
-          console.error("Both audio sources failed");
-          setIsLoading(false);
-        });
-      });
-    };
-    
-    initAudio();
-    
     // Check if device motion is available
     if (typeof DeviceMotionEvent !== "undefined") {
       // iOS 13+ requires permission
@@ -67,24 +43,26 @@ function App() {
         setHasMotionPermission(true);
       }
     }
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    setIsLoading(false);
   }, []);
+
+  // Handle video can play
+  const handleCanPlay = () => {
+    setAudioReady(true);
+    setIsLoading(false);
+  };
   
-  // Play bell sound
+  // Play bell sound using video element
   const playBellSound = useCallback(() => {
-    if (audioRef.current && !isRinging) {
+    if (videoRef.current && !isRinging) {
       setIsRinging(true);
       setShowRipple(true);
       setRingCount(prev => prev + 1);
       
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(console.error);
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch((err) => {
+        console.log("Audio play failed:", err);
+      });
       
       // Reset animation after it completes
       setTimeout(() => {
@@ -156,6 +134,22 @@ function App() {
   
   return (
     <div className="app-container bg-background">
+      {/* Hidden video element for audio playback */}
+      <video 
+        ref={videoRef}
+        src={BELL_SOUND}
+        preload="auto"
+        playsInline
+        onCanPlay={handleCanPlay}
+        onError={(e) => {
+          console.log("Primary source error, trying fallback");
+          if (videoRef.current) {
+            videoRef.current.src = BELL_SOUND_FALLBACK;
+          }
+        }}
+        style={{ display: 'none' }}
+      />
+      
       {/* Background Image */}
       <img 
         src={BELL_IMAGE}
