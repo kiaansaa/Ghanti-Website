@@ -9,9 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Asset URLs
+// Asset URLs - use local files for reliability
 const BELL_IMAGE = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/cd26ldzp_image.png";
-const BELL_SOUND = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/qsx4zf71_Purifying_Auspicious_Worship_Bell_Sound_Effect_Hindu_Religious_Bell_Sound_Ghanti_Sound_Effect_128KBPS.mp4";
+const BELL_SOUND = "/bell-sound.mp4";
+const BELL_SOUND_FALLBACK = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/qsx4zf71_Purifying_Auspicious_Worship_Bell_Sound_Effect_Hindu_Religious_Bell_Sound_Ghanti_Sound_Effect_128KBPS.mp4";
 
 // Shake detection threshold
 const SHAKE_THRESHOLD = 15;
@@ -29,18 +30,32 @@ function App() {
   const lastShakeTime = useRef(0);
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
   
-  // Initialize audio
+  // Initialize audio with fallback
   useEffect(() => {
-    audioRef.current = new Audio(BELL_SOUND);
-    audioRef.current.preload = "auto";
+    const initAudio = async () => {
+      audioRef.current = new Audio(BELL_SOUND);
+      audioRef.current.preload = "auto";
+      
+      audioRef.current.addEventListener("canplaythrough", () => {
+        setIsLoading(false);
+      });
+      
+      audioRef.current.addEventListener("error", () => {
+        // Try fallback URL
+        console.log("Primary audio failed, trying fallback...");
+        audioRef.current = new Audio(BELL_SOUND_FALLBACK);
+        audioRef.current.preload = "auto";
+        audioRef.current.addEventListener("canplaythrough", () => {
+          setIsLoading(false);
+        });
+        audioRef.current.addEventListener("error", () => {
+          console.error("Both audio sources failed");
+          setIsLoading(false);
+        });
+      });
+    };
     
-    audioRef.current.addEventListener("canplaythrough", () => {
-      setIsLoading(false);
-    });
-    
-    audioRef.current.addEventListener("error", () => {
-      setIsLoading(false);
-    });
+    initAudio();
     
     // Check if device motion is available
     if (typeof DeviceMotionEvent !== "undefined") {
