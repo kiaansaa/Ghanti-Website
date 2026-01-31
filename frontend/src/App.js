@@ -191,7 +191,7 @@ function App() {
         {/* Header text */}
         <div className="animate-fade-in mb-8 text-center">
           <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-foreground text-shadow tracking-wider">
-            ABKI BAR BALEN SARKAR
+            JAI DESH JAI GHANTI
           </h1>
           <p className="mt-2 text-foreground/80 text-lg sm:text-xl font-body">
             Shake your device or tap the bell
