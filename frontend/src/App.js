@@ -15,11 +15,11 @@ const BELL_SOUND = "/bell-sound.mp4";
 const BELL_SOUND_FALLBACK = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/qsx4zf71_Purifying_Auspicious_Worship_Bell_Sound_Effect_Hindu_Religious_Bell_Sound_Ghanti_Sound_Effect_128KBPS.mp4";
 
 // Shake detection threshold
-const SHAKE_THRESHOLD = 15;
-const SHAKE_COOLDOWN = 300; // ms between shakes
+const SHAKE_THRESHOLD = 12;
+const SHAKE_STOP_DELAY = 150; // ms to wait before stopping sound
 
 function App() {
-  const [isRinging, setIsRinging] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const [hasMotionPermission, setHasMotionPermission] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,8 +28,9 @@ function App() {
   const [audioReady, setAudioReady] = useState(false);
   
   const videoRef = useRef(null);
-  const lastShakeTime = useRef(0);
   const lastAcceleration = useRef({ x: 0, y: 0, z: 0 });
+  const shakeTimeout = useRef(null);
+  const isPlayingRef = useRef(false);
   
   // Initialize audio/video element
   useEffect(() => {
@@ -44,6 +45,12 @@ function App() {
       }
     }
     setIsLoading(false);
+    
+    return () => {
+      if (shakeTimeout.current) {
+        clearTimeout(shakeTimeout.current);
+      }
+    };
   }, []);
 
   // Handle video can play
@@ -52,37 +59,40 @@ function App() {
     setIsLoading(false);
   };
   
-  // Play bell sound using video element
-  const playBellSound = useCallback(() => {
-    if (videoRef.current && !isRinging) {
-      setIsRinging(true);
+  // Start playing sound (while shaking)
+  const startSound = useCallback(() => {
+    if (videoRef.current && !isPlayingRef.current) {
+      isPlayingRef.current = true;
+      setIsShaking(true);
       setShowRipple(true);
       setRingCount(prev => prev + 1);
       
-      videoRef.current.currentTime = 0;
+      videoRef.current.loop = true; // Loop while shaking
       videoRef.current.play().catch((err) => {
         console.log("Audio play failed:", err);
+        isPlayingRef.current = false;
       });
-      
-      // Reset animation after it completes
-      setTimeout(() => {
-        setIsRinging(false);
-      }, 500);
-      
-      setTimeout(() => {
-        setShowRipple(false);
-      }, 600);
     }
-  }, [isRinging]);
+  }, []);
   
-  // Handle device motion (shake detection)
+  // Stop playing sound (when shaking stops)
+  const stopSound = useCallback(() => {
+    if (videoRef.current && isPlayingRef.current) {
+      videoRef.current.pause();
+      videoRef.current.loop = false;
+      isPlayingRef.current = false;
+      setIsShaking(false);
+      setShowRipple(false);
+    }
+  }, []);
+  
+  // Handle device motion (shake detection) - continuous shake detection
   const handleDeviceMotion = useCallback((event) => {
     const { accelerationIncludingGravity } = event;
     
     if (!accelerationIncludingGravity) return;
     
     const { x, y, z } = accelerationIncludingGravity;
-    const currentTime = Date.now();
     
     // Calculate acceleration delta
     const deltaX = Math.abs(x - lastAcceleration.current.x);
@@ -95,11 +105,21 @@ function App() {
     // Check if shake detected
     const totalDelta = deltaX + deltaY + deltaZ;
     
-    if (totalDelta > SHAKE_THRESHOLD && currentTime - lastShakeTime.current > SHAKE_COOLDOWN) {
-      lastShakeTime.current = currentTime;
-      playBellSound();
+    if (totalDelta > SHAKE_THRESHOLD) {
+      // Device is shaking - start/continue sound
+      startSound();
+      
+      // Clear any pending stop timeout
+      if (shakeTimeout.current) {
+        clearTimeout(shakeTimeout.current);
+      }
+      
+      // Set timeout to stop sound if no shake detected
+      shakeTimeout.current = setTimeout(() => {
+        stopSound();
+      }, SHAKE_STOP_DELAY);
     }
-  }, [playBellSound]);
+  }, [startSound, stopSound]);
   
   // Add device motion listener
   useEffect(() => {
@@ -127,9 +147,17 @@ function App() {
     }
   };
   
-  // Handle click/tap on bell
+  // Handle click/tap on bell - toggle sound for desktop/click testing
   const handleBellClick = () => {
-    playBellSound();
+    if (isPlayingRef.current) {
+      stopSound();
+    } else {
+      startSound();
+      // Auto-stop after a short duration for click
+      setTimeout(() => {
+        stopSound();
+      }, 1500);
+    }
   };
   
   return (
@@ -165,8 +193,8 @@ function App() {
         
         {/* Header text */}
         <div className="animate-fade-in mb-8 text-center">
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl text-foreground text-shadow tracking-wider">
-            BAJAO GHANTI
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-foreground text-shadow tracking-wider">
+            ABKI BAR BALEN SARKAR
           </h1>
           <p className="mt-2 text-foreground/80 text-lg sm:text-xl font-body">
             Shake your device or tap the bell
@@ -175,7 +203,7 @@ function App() {
         
         {/* Bell container */}
         <div 
-          className={`bell-wrapper relative no-select ${isRinging ? 'animate-bell-shake' : 'animate-float'}`}
+          className={`bell-wrapper relative no-select ${isShaking ? 'animate-bell-shake' : 'animate-float'}`}
           onClick={handleBellClick}
           role="button"
           tabIndex={0}
