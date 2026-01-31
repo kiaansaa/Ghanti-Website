@@ -11,8 +11,8 @@ import {
 
 // Asset URLs - use local files for reliability
 const BELL_IMAGE = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/cd26ldzp_image.png";
-const BELL_SOUND = "/bell-sound.mp4";
-const BELL_SOUND_FALLBACK = "https://customer-assets.emergentagent.com/job_0a2d9433-7faf-4a43-8fda-0d77d0443851/artifacts/qsx4zf71_Purifying_Auspicious_Worship_Bell_Sound_Effect_Hindu_Religious_Bell_Sound_Ghanti_Sound_Effect_128KBPS.mp4";
+const BELL_SOUND = "/bell-sound.mp3";
+const BELL_SOUND_FALLBACK = "/bell-sound.mp4";
 
 // Shake detection threshold
 const SHAKE_THRESHOLD = 12;
@@ -162,21 +162,18 @@ function App() {
   
   return (
     <div className="app-container bg-background">
-      {/* Hidden video element for audio playback */}
-      <video 
+      {/* Hidden audio element for sound playback */}
+      <audio 
         ref={videoRef}
-        src={BELL_SOUND}
         preload="auto"
-        playsInline
         onCanPlay={handleCanPlay}
         onError={(e) => {
-          console.log("Primary source error, trying fallback");
-          if (videoRef.current) {
-            videoRef.current.src = BELL_SOUND_FALLBACK;
-          }
+          console.log("Audio source error, trying fallback");
         }}
-        style={{ display: 'none' }}
-      />
+      >
+        <source src={BELL_SOUND} type="audio/mpeg" />
+        <source src={BELL_SOUND_FALLBACK} type="video/mp4" />
+      </audio>
       
       {/* Background Image */}
       <img 
